@@ -243,6 +243,7 @@ if __name__ == '__main__':
   list_max_value_unordered.append(list)
   label_list.append(label)
  json = save_as_json(list_max_value_unordered)
+
  #print(json)
  #plot_pred_and_labelpoints(list_max_value_unordered,label_list,num_images_to_test)
  get_score(list_max_value_unordered,label_list,num_images_to_test)
