@@ -26,38 +26,37 @@ from torchvision import transforms, datasets, models
 from TracoDataset import *
 import Model
 from DataReader import *
+from Model import ResNetUNet
 
-
-def get_test_images():
+#loads first i images from train data, estimates pos with model
+# and stores output in prediction
+#returns a list with all predictions and the acording labels
+def get_test_images(i):
  from torchvision import transforms
  train_transform = transforms.Compose([transforms.ToTensor()])
- some_dataset = TracoDataset(transform=train_transform, mode='test')
- samples = pickle.load(open("/content/drive/MyDrive/Cornhole/frames_train.p", "rb"))
- from torchvision import transforms
- train_transform = transforms.Compose([transforms.ToTensor()])
+ samples = pickle.load(open("C:/Users/Florian/Desktop/Job/Cornhole/frames_train.p", "rb"))
  prediction = []
- for i in range(1):
+ for i in range(i):
   i = i + 10
   img = pickle.load(open(samples[i][0], "rb"))
+  #get labels to image
   pos_tupel = samples[i][1]
   # convert to RGB
-  print("img:", type(img))
   im_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
   im_rgb = train_transform(im_rgb)
-  print("im_rgb:", type(im_rgb))
   img = torch.unsqueeze(im_rgb, 0).to(device)
-  print("im2:", type(img))
+  #put image in model
   some_result = model(img)
   some_result = torch.squeeze(some_result, 0)
   some_result = torch.squeeze(some_result, 0)
-  f1 = plt.figure(1)
-  plt.imshow(some_result.cpu().detach().numpy(), interpolation='nearest')
 
-  f3 = plt.figure(3)
+  #plot image and prediction
+  fig, axs = plt.subplots(2)
+  axs[0].imshow(some_result.cpu().detach().numpy(), interpolation='nearest')
   im_rgb = torch.squeeze(im_rgb)
   im_rgb = im_rgb.numpy()
   im_rgb = np.transpose(im_rgb, (1, 2, 0))
-  plt.imshow(im_rgb, interpolation='nearest')
+  axs[1].imshow(im_rgb, interpolation='nearest')
   plt.show()
 
   # posliste auf 256 bild converten
@@ -69,16 +68,16 @@ def get_test_images():
    y = (y / 100) * 256
    pos_list.append((x, y))
 
-  print(pos_list)
   prediction.append((some_result.cpu().detach().numpy(), pos_list))
  return prediction
 
+#gets prediction and searches for max values which are the pos
+#returns postions and labels
 def get_densest_numpy_patches(pred):
   image, pos_list = pred
-  f2 = plt.figure(30)
-  plt.imshow(image, interpolation='nearest')
-  plt.show()
-  print("original")
+  fig, axs = plt.subplots(9)
+  axs[0].imshow(image, interpolation='nearest')
+  #print("original")
   radius = 10
   maximum_value_list = []
   # get maximum value coordinates
@@ -104,25 +103,29 @@ def get_densest_numpy_patches(pred):
      c = a % l
      r = int(a / l)
      if (r > 5 and c > 5):
+      # terminate kreterium when there are no more data points which are at least threshold*highest intensity pixel
+      #and are not colser to the edge than 5 pixel, because of edge effects
       if (image[r, c] < threshold):
-       return maximum_value_list
+       plt.show()
+       return maximum_value_list, pos_list
    # Alle pixel darum auf 0 setzten damit argmax neuen höchsten finden kann
    image = cv2.circle(image, (c, r), radius, 0, -1)
-   f1 = plt.figure(i)
-   plt.imshow(image, interpolation='nearest')
-   plt.show()
+   axs[i+1].imshow(image, interpolation='nearest')
+
    # Höhepunkt hinzufügen
    maximum_value_list.append([c, r])
    a = np.argmax(image)
    c = a % 256
    r = int(a / 256)
+   #terminate kreterium when there are no more datapoints which are at least threshold*highest intensity pixel
    if (image[r, c] < threshold):
-    return maximum_value_list
-
-  return maximum_value_list
+    plt.show()
+    return maximum_value_list, pos_list
+  plt.show()
+  return maximum_value_list, pos_list
 
 def save_as_json(list_max_value_ordered):
- print(list_max_value_ordered)
+ #print(list_max_value_ordered)
  json_predicted = {}
  json_predicted['rois'] = []
  frame = 0
@@ -136,76 +139,110 @@ def save_as_json(list_max_value_ordered):
    })
    id += 1
   frame += 1
- print(json_predicted)
+ #print(json_predicted)
  return json_predicted
 
-def get_score(json_predicted):
- frameHeight = 256
- frameWidth = 256
- x = 0
- for i in json_predicted["rois"]:
-  pos = i['pos']
-  pos_x = np.round((pos[0] / 256) * frameHeight, 2)
-  pos_y = np.round((pos[1] / 256) * frameWidth, 2)
-  i['pos'] = [pos_x, pos_y]
- """
- for i in label_json["rois"]:
-   pos = i['pos']
-   pos_x = np.round(pos[0],2)
-   pos_y = np.round(pos[1],2)
-   i['pos'] = [pos_x,pos_y]
- """
- print(json_predicted['rois'])
+#calculates the shortest distance to any label in reach
+def get_score(predicted,label_list,num_images):
+ #range of score
  x = 0
  distmean = 0
  distsum = 0
+ dist2 =0
  dist5 = 0
  dist10 = 0
  dist20 = 0
  dist30 = 0
  distdrüber = 0
- for i in json_predicted['rois']:
-  dist = 0
-  predx = i['pos'][0]
-  predy = i['pos'][1]
-  labelx = whatever_dict[x][0]
-  labely = whatever_dict[x][1]
-  dist = np.sqrt((labelx - predx) ** 2 + (labely - predy) ** 2)
-  if (dist <= 5):
-   dist5 += 1
-  elif (dist <= 10):
-   dist10 += 1
-  elif (dist <= 20):
-   dist20 += 1
-  elif (dist <= 30):
-   dist30 += 1
-  elif (dist > 30):
-   distdrüber += 1
-  distsum += dist
-  distmean += dist
-  distmean = distmean / 2
-  x += 1
- print("distmean: ", distmean)
+ nichtalleerkannt=0
+ #go over all images as defined in main
+ for i in range(num_images):
+  #get label and pred
+  pos_list_label = label_list[i]
+  pos_list_pred = predicted[i]
+  #case if not all bags are detected
+  if(len(pos_list_pred) != len(pos_list_label)):
+   nichtalleerkannt+=1
+  else:
+   #calculate shortest distance for a pred for every label and save
+   for pred in pos_list_pred:
+    dist = 1000
+    for label in pos_list_label:
+     d = math.dist(pred,label)
+     if(d<dist):
+      dist = d
+   if (dist <= 2):
+    dist2 += 1
+   elif (dist < 5):
+    dist5 += 1
+   elif (dist <= 10):
+    dist10 += 1
+   elif (dist <= 20):
+    dist20 += 1
+   elif (dist <= 30):
+    dist30 += 1
+   elif (dist > 30):
+    distdrüber += 1
+
+   distsum += dist
+   distmean += dist
+   x += 1
+
+ print("distmean: ", distmean/x)
  print("distsum: ", distsum)
- print("dist5: ", dist5 / x, "%")
- print("dist10: ", dist10 / x, "%")
- print("dist20: ", dist20 / x, "%")
- print("dist30: ", dist30 / x, "%")
- print("distdrüber: ", distdrüber / x, "%")
+ print("dist2: ", (dist2 / x)*100, "%")
+ print("dist5: ", (dist5 / x)*100, "%")
+ print("dist10: ", (dist10 / x)*100, "%")
+ print("dist20: ", (dist20 / x)*100, "%")
+ print("dist30: ", (dist30 / x)*100, "%")
+ print("distdrüber: ", (distdrüber / x)*100, "%")
+ print('nichterkannt: ', nichtalleerkannt)
+ print('x: ',x)
+
+def plot_pred_and_labelpoints(pred,label,num):
+ fig, axs = plt.subplots(num)
+ for i in range(num):
+  # get label and pred
+  pos_list_label = label[i]
+  pos_list_pred = pred[i]
+  base = np.zeros([256, 256], dtype=np.uint8)
+  for elem in pos_list_label:
+   # reduziert die pos auf 256,256 bild
+   pos_x = (elem[0] / 100) * 256
+   pos_y = (elem[1] / 100) * 256
+   # print(pos_x,pos_y)
+   RADIUS = 3
+   base = cv2.circle(base, (int(pos_x), int(pos_y)), RADIUS, 100, -1)
+  for elem in pos_list_label:
+   # reduziert die pos auf 256,256 bild
+   pos_x = (elem[0] / 100) * 256
+   pos_y = (elem[1] / 100) * 256
+   # print(pos_x,pos_y)
+   RADIUS = 3
+   base = cv2.circle(base, (int(pos_x), int(pos_y)), RADIUS,color = (0, 0, 255), thickness= -1)
+  axs[i].imshow(base, interpolation='nearest')
+  plt.show()
+
 
 
 if __name__ == '__main__':
  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
  #newReader = DataReader()
  #model = Model.start_train()
- model = torch.load('C:/Users/Florian/Desktop/Job/Cornhole/Cornhole/model_cornhole.pth', map_location=torch.device('cpu'))
+ model = torch.load('model_cornhole.pth', map_location=torch.device('cpu'))
+ print('model loaded')
+ num_images_to_test = 1
+ prediction = get_test_images(num_images_to_test)
 
- prediction = get_test_images()
  list_max_value_unordered = []
- for i in prediction:
-  list = get_densest_numpy_patches(i)
-  print(list)
-  list_max_value_unordered.append(list)
+ label_list=[]
 
+ #for every prediction and acording label get positions
+ for i in prediction:
+  list,label = get_densest_numpy_patches(i)
+  list_max_value_unordered.append(list)
+  label_list.append(label)
  json = save_as_json(list_max_value_unordered)
- get_score(json)
+ #print(json)
+ #plot_pred_and_labelpoints(list_max_value_unordered,label_list,num_images_to_test)
+ get_score(list_max_value_unordered,label_list,num_images_to_test)
