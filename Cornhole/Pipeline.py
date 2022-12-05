@@ -231,7 +231,7 @@ if __name__ == '__main__':
  #model = Model.start_train()
  model = torch.load('model_cornhole.pth', map_location=torch.device('cpu'))
  print('model loaded')
- num_images_to_test = 1
+ num_images_to_test = 4
  prediction = get_test_images(num_images_to_test)
 
  list_max_value_unordered = []

@@ -1,6 +1,6 @@
 import RPi.GPIO as GPIO
 import time
-import telepot
+#import telepot
 from configparser import ConfigParser
 import cv2
 import torch 
