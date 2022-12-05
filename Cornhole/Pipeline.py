@@ -75,8 +75,11 @@ def get_test_images(i):
 #returns postions and labels
 def get_densest_numpy_patches(pred):
   image, pos_list = pred
-  fig, axs = plt.subplots(9)
-  axs[0].imshow(image, interpolation='nearest')
+  fig = plt.figure()
+  ax = fig.add_subplot(151)
+  ax.imshow(image, interpolation='nearest')
+  #fig3 = plt.figure(10)
+  #plt.imshow(image, interpolation='nearest')
   #print("original")
   radius = 10
   maximum_value_list = []
@@ -110,7 +113,9 @@ def get_densest_numpy_patches(pred):
        return maximum_value_list, pos_list
    # Alle pixel darum auf 0 setzten damit argmax neuen höchsten finden kann
    image = cv2.circle(image, (c, r), radius, 0, -1)
-   axs[i+1].imshow(image, interpolation='nearest')
+   #axs[i+1].imshow(image, interpolation='nearest')
+   ax = fig.add_subplot(152+i)
+   ax.imshow(image, interpolation='nearest')
 
    # Höhepunkt hinzufügen
    maximum_value_list.append([c, r])
