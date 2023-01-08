@@ -9,7 +9,8 @@ from torch.optim import lr_scheduler
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, datasets, models
 from TracoDataset import TracoDataset
-
+from torchsummary import summary
+import random
 
 class loss():
     #
@@ -144,7 +145,6 @@ class ResNetUNet(torch.nn.Module):
         return out
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(device)
 
 def train_model(model, optimizer, scheduler, num_epochs, dataloaders):
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -209,11 +209,11 @@ def train_model(model, optimizer, scheduler, num_epochs, dataloaders):
     model.load_state_dict(best_model_wts)
     return model
 
-def start_train():
+def start_train(Num_Eochen = 25, Batch_size=16):
     # make dataloder
-    NUM_EPOCHS = 25
+    NUM_EPOCHS = Num_Eochen
     N_CLASS = 1
-    batch_size = 16
+    batch_size = Batch_size
 
 
     normalize = transforms.Normalize((0.1307,), (0.3081,))
@@ -241,7 +241,8 @@ def start_train():
     # exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
 
     model = train_model(model, optimizer_ft, None, NUM_EPOCHS, dataloaders)
+
+    summary(model, input_size=(3, 256, 256))
+    torch.save(model, 'C:/Users/flori/OneDrive - Bund der Deutschen Katholischen Jugend (BDKJ) Miesbach/Dokumente/Job/Cornhole/Cornhole/model_cornhole6.pth')
     return model
-    #from torchsummary import summary
-    #summary(model, input_size=(3, 256, 256), )
-    #torch.save(model, '/content/drive/MyDrive/Cornhole/model_cornhole.pth')
+

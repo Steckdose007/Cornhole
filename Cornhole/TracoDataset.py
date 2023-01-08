@@ -31,9 +31,9 @@ class TracoDataset(Dataset):
     # load the pickl lists
     def __init__(self, mode, transform=None):
         if mode == 'train':
-            self.samples = pickle.load(open("C:/Users/Florian/Desktop/Job/Cornhole/frames_train.p", "rb"))
+            self.samples = pickle.load(open("C:/Users/flori/OneDrive - Bund der Deutschen Katholischen Jugend (BDKJ) Miesbach/Dokumente/Job/Cornhole/frames_train.p", "rb"))
         elif mode == 'test':
-            self.samples = pickle.load(open("C:/Users/Florian/Desktop/Job/Cornhole/frames_test.p", "rb"))
+            self.samples = pickle.load(open("C:/Users/flori/OneDrive - Bund der Deutschen Katholischen Jugend (BDKJ) Miesbach/Dokumente/Job/Cornhole/frames_test.p", "rb"))
         else:
             raise ValueError(f'Selected mode {mode} is not implemented')
         pass
@@ -62,7 +62,7 @@ class TracoDataset(Dataset):
             pos_x = (elem[0] / 100) * 256
             pos_y = (elem[1] / 100) * 256
             # print(pos_x,pos_y)
-            RADIUS = 3
+            RADIUS = 4
             base = cv2.circle(base, (int(pos_x), int(pos_y)), RADIUS, 100, -1)
 
         im_rgb = self.transform(im_rgb)
@@ -76,8 +76,8 @@ if __name__ == "__main__":
 
     train_transform = transforms.Compose([transforms.ToTensor()])
     print(torch.cuda.is_available())
-    some_dataset = TracoDataset(mode='train', transform=train_transform)
-    img, target = some_dataset.__getitem__(5)
+    some_dataset = TracoDataset(mode='test', transform=train_transform)
+    img, target = some_dataset.__getitem__(173)
     fig, axs = plt.subplots(2)
     target = torch.squeeze(target)
     target = target.numpy()

@@ -28,15 +28,15 @@ from torchvision import transforms, datasets, models
 class DataReader:
     def __init__(self) -> None:
         # directory in which the videos are stored
-        self.directory_images = "C:/Users/Florian/Desktop/Job/cc_re/"
+        self.directory_images = "C:/Users/flori/OneDrive - Bund der Deutschen Katholischen Jugend (BDKJ) Miesbach/Dokumente/Job/Cornhole_resized/"
         # video list in which first the path to frame is stored. Then the frame number and then the position of the bag
         self.images_list = []
         # call funktion to store each frame
         self.read_images()
         x_train, x_test = train_test_split(self.images_list, test_size=0.2)
         print(len(self.images_list), len(x_train), len(x_test))
-        pickle.dump(x_train, open("C:/Users/Florian/Desktop/Job/Cornhole/frames_train.p", "wb"))
-        pickle.dump(x_test, open("C:/Users/Florian/Desktop/Job/Cornhole/frames_test.p", "wb"))
+        pickle.dump(x_train, open("C:/Users/flori/OneDrive - Bund der Deutschen Katholischen Jugend (BDKJ) Miesbach/Dokumente/Job/Cornhole/frames_train.p", "wb"))
+        pickle.dump(x_test, open("C:/Users/flori/OneDrive - Bund der Deutschen Katholischen Jugend (BDKJ) Miesbach/Dokumente/Job/Cornhole/frames_test.p", "wb"))
 
     def read_images(self):
         # take directory of videos
@@ -52,7 +52,7 @@ class DataReader:
                 # read images
                 img = cv2.imread(self.directory_images + filename)
                 # read label
-                traco_path = "C:/Users/Florian/Desktop/Job/Cornhole/annotat.json"
+                traco_path = "C:/Users/flori/OneDrive - Bund der Deutschen Katholischen Jugend (BDKJ) Miesbach/Dokumente/Job/Cornhole/annotat.json"
                 with open(traco_path) as f:
                     ann = json.loads(f.read())
                     # perform file operations
@@ -69,7 +69,7 @@ class DataReader:
                 i += 1
                 # create array for each id and position
                 # create new path to frame
-                path_to_frame = "C:/Users/Florian/Desktop/Job/cc_re/" + filename[:-4]
+                path_to_frame = "C:/Users/flori/OneDrive - Bund der Deutschen Katholischen Jugend (BDKJ) Miesbach/Dokumente/Job/Cornhole_resized_pickled/" + filename[:-4]
                 # store frame
                 pickle.dump(img, open(path_to_frame + ".p", "wb"))
                 # store path to frame in video list
